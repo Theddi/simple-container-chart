@@ -74,7 +74,9 @@ automountServiceAccountToken: false
 # Pod-level securityContext.
 podSecurityContext:
   runAsNonRoot: true
-  runAsUser: 1000        # change if your image ships files owned by another UID
+  # change if your image ships files owned by another UID
+  # docker run --rm --entrypoint id <image>
+  runAsUser: 1000
   runAsGroup: 1000
   fsGroup: 1000
   seccompProfile:
