@@ -9,7 +9,7 @@ image:
   # Image name.
   image: nginx-unprivileged
   # Image tag or digest. Pin something immutable in production.
-  tag: "1.27-alpine"
+  tag: "latest"
   pullPolicy: IfNotPresent
 
 # Port your app listens on INSIDE the container.
