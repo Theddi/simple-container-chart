@@ -1,0 +1,30 @@
+{{ include "simple-container.fullname" . }} deployed.
+
+Image:  {{ include "simple-container.image" . }}
+Port:   {{ .Values.containerPort }} (container) -> service {{ .Values.service.port }}
+
+Reach it:
+{{- if .Values.httproute.enabled }}
+{{- range .Values.httproute.hostnames }}
+  https://{{ . }}   (Gateway API HTTPRoute)
+{{- end }}
+{{- else if .Values.ingress.enabled }}
+{{- range .Values.ingress.hosts }}
+  http{{ if $.Values.ingress.tls }}s{{ end }}://{{ .host }}
+{{- end }}
+{{- else }}
+  kubectl -n {{ .Release.Namespace }} port-forward svc/{{ include "simple-container.fullname" . }} 8080:{{ .Values.service.port }}
+  -> http://localhost:8080
+{{- end }}
+
+This pod runs under the Restricted Pod Security Standard: non-root,
+read-only root filesystem, all capabilities dropped, no privilege escalation,
+RuntimeDefault seccomp, no service-account token.
+
+Tips:
+- To enforce it namespace-wide, label the namespace:
+    kubectl label ns {{ .Release.Namespace }} \
+      pod-security.kubernetes.io/enforce=restricted
+- readOnlyRootFilesystem is on. If the app crashes trying to write to disk,
+  add the path under `emptyDirs` in values.
+- Binding a port < 1024 needs securityContext.capabilities.add: [NET_BIND_SERVICE].

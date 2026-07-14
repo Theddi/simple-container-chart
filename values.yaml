@@ -1,0 +1,185 @@
+# =============================================================================
+#  NEW APP? Change the block below. Everything else has strict, safe defaults.
+# =============================================================================
+image:
+  # Registry host. Examples: docker.io, ghcr.io, registry.k8s.io, quay.io
+  registry: docker.io
+  # Org / namespace / project path. May be empty (e.g. docker.io library images).
+  repository: nginxinc
+  # Image name.
+  image: nginx-unprivileged
+  # Image tag or digest. Pin something immutable in production.
+  tag: "1.27-alpine"
+  pullPolicy: IfNotPresent
+
+# Port your app listens on INSIDE the container.
+# Must be >= 1024: the strict securityContext drops all capabilities, so the
+# process cannot bind privileged ports (<1024). To use e.g. port 80, add
+# NET_BIND_SERVICE under securityContext.capabilities.add (weakens hardening).
+containerPort: 8080
+
+# =============================================================================
+#  Usually no need to touch anything below.
+# =============================================================================
+
+replicaCount: 1
+
+nameOverride: ""
+fullnameOverride: ""
+
+imagePullSecrets: []
+
+service:
+  type: ClusterIP
+  port: 80
+
+# ----- Exposure (enable one; both default off) -------------------------------
+ingress:
+  enabled: false
+  className: ""
+  annotations: {}
+    # cert-manager.io/cluster-issuer: letsencrypt-prod
+  hosts:
+    - host: app.example.com
+      paths:
+        - path: /
+          pathType: Prefix
+  tls: []
+    # - secretName: app-tls
+    #   hosts:
+    #     - app.example.com
+
+# Gateway API HTTPRoute (gateway.networking.k8s.io/v1)
+httproute:
+  enabled: false
+  annotations: {}
+  parentRefs:
+    - name: ""
+      # namespace: ""
+      # sectionName: ""
+  hostnames:
+    - app.example.com
+  rules: []
+
+# ----- Security (STRICT: Kubernetes "Restricted" Pod Security Standard) -------
+# Do not loosen these unless an image truly requires it.
+serviceAccount:
+  create: true
+  name: ""
+  annotations: {}
+
+# Web apps rarely need to talk to the Kubernetes API — don't expose a token.
+automountServiceAccountToken: false
+
+# Pod-level securityContext.
+podSecurityContext:
+  runAsNonRoot: true
+  runAsUser: 1000        # change if your image ships files owned by another UID
+  runAsGroup: 1000
+  fsGroup: 1000
+  seccompProfile:
+    type: RuntimeDefault
+
+# Container-level securityContext.
+securityContext:
+  allowPrivilegeEscalation: false
+  readOnlyRootFilesystem: true
+  runAsNonRoot: true
+  capabilities:
+    drop:
+      - ALL
+    # add:
+    #   - NET_BIND_SERVICE   # only if you must bind a port < 1024
+  seccompProfile:
+    type: RuntimeDefault
+
+# readOnlyRootFilesystem is on, so the container cannot write to its image
+# filesystem. Mount writable in-memory scratch dirs here for anything the app
+# writes at runtime (temp files, caches, pid/run dirs). /tmp is provided by
+# default; add the paths your image needs.
+emptyDirs:
+  - name: tmp
+    mountPath: /tmp
+    # medium: Memory     # tmpfs (RAM-backed) instead of node disk
+    # sizeLimit: 64Mi
+  # nginx-unprivileged example — uncomment if using the default image:
+  # - name: nginx-cache
+  #   mountPath: /var/cache/nginx
+  # - name: nginx-run
+  #   mountPath: /var/run
+
+# ----- Config files ----------------------------------------------------------
+# Each entry becomes a file (keyed by `name`) inside one ConfigMap and is
+# mounted read-only at `path` in the container via subPath — so it drops a
+# single file into an existing directory without hiding the rest of it. Works
+# fine with readOnlyRootFilesystem. Changing content rolls the pod automatically.
+# `name` values must be unique.
+configs: []
+  # - name: nginx.conf
+  #   path: /etc/nginx/nginx.conf
+  #   content: |
+  #     server {
+  #       listen 8080;
+  #       location / { return 200 "ok\n"; }
+  #     }
+  # - name: app.yaml
+  #   path: /app/config/app.yaml
+  #   content: |
+  #     log_level: info
+
+# ----- Health probes ---------------------------------------------------------
+livenessProbe:
+  enabled: true
+  httpGet:
+    path: /
+    port: http
+  initialDelaySeconds: 5
+  periodSeconds: 10
+readinessProbe:
+  enabled: true
+  httpGet:
+    path: /
+    port: http
+  periodSeconds: 10
+startupProbe:
+  enabled: false
+  httpGet:
+    path: /
+    port: http
+  periodSeconds: 2
+  failureThreshold: 30
+
+# ----- Resources -------------------------------------------------------------
+resources:
+  requests:
+    cpu: 10m
+    memory: 32Mi
+  limits:
+    # No CPU limit on purpose (avoids CFS throttling); cap memory to bound OOM blast radius.
+    memory: 128Mi
+
+# ----- Extra config ----------------------------------------------------------
+env: []
+  # - name: FOO
+  #   value: bar
+envFrom: []
+  # - configMapRef:
+  #     name: my-config
+  # - secretRef:
+  #     name: my-secret
+
+extraVolumes: []
+extraVolumeMounts: []
+
+podAnnotations: {}
+podLabels: {}
+
+strategy:
+  type: RollingUpdate
+  rollingUpdate:
+    maxSurge: 1
+    maxUnavailable: 0
+
+nodeSelector: {}
+tolerations: []
+affinity: {}
