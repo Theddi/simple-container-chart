@@ -42,6 +42,9 @@ spec:
         - name: {{ .Chart.Name }}
           image: {{ include "simple-container.image" . | quote }}
           imagePullPolicy: {{ .Values.image.pullPolicy }}
+          {{- with .Values.containerArgs }}
+          args: {{ .}}
+          {{- end }}
           securityContext:
             {{- toYaml .Values.securityContext | nindent 12 }}
           ports:

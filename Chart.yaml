@@ -4,7 +4,7 @@ description: >-
   Minimal, strict-by-default, Helm chart for simple stateless web containers.
   Copy the values file, change the image (and containerPort), and deploy.
 type: application
-version: 0.1.0
+version: 0.2.0
 keywords:
   - web
   - container

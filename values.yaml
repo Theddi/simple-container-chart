@@ -24,6 +24,9 @@ containerPort: 8080
 
 replicaCount: 1
 
+# For when you need or want to modify start arguments
+containerArgs: []
+
 nameOverride: ""
 fullnameOverride: ""
 
