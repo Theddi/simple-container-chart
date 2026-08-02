@@ -74,6 +74,10 @@ serviceAccount:
 # Web apps rarely need to talk to the Kubernetes API — don't expose a token.
 automountServiceAccountToken: false
 
+# Kubernetes service env var (<SVCNAME>_PORT=tcp://ip:port, <SVCNAME>_SERVICE_HOST, ...)
+# Default to false to not conflict with images env vars
+enableServiceLinks: false
+
 # Pod-level securityContext.
 podSecurityContext:
   runAsNonRoot: true
