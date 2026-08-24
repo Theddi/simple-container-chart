@@ -1,3 +1,6 @@
+# Orphaned repo, chart has a new home !
+https://git.thed-co.de/Theddi/charts
+
 # simple-container
 
 A minimal, **strict-by-default** Helm chart for simple stateless web containers.
